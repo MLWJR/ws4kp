@@ -198,6 +198,54 @@
       Ws4kp Version: <span><%- version %></span>
     </div>
   </div>
+    <div class="heading">Header Information</div>
+    ...
+    <span id="spanVersion"></span>
+  </div>
+
+  <!-- Force autoplay and resume on interaction -->
+  <script>
+  (function () {
+    function tryPlay() {
+      try {
+        if (window.Howler) {
+          if (typeof Howler.mute === 'function') Howler.mute(false);
+          if (Array.isArray(Howler._howls) && Howler._howls.length > 0) {
+            try { Howler._howls[0].play(); } catch (e) {}
+          }
+        }
+      } catch (e) {}
+
+      try {
+        var audio = document.querySelector('audio');
+        if (audio) {
+          audio.muted = false;
+          if (audio.volume === 0) audio.volume = 0.6;
+          audio.autoplay = true;
+          audio.play().catch(()=>{});
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener('load', function () {
+      setTimeout(tryPlay, 500);
+      setTimeout(tryPlay, 2000);
+    });
+
+    function resumeOnce() {
+      tryPlay();
+      document.removeEventListener('pointerdown', resumeOnce);
+      document.removeEventListener('keydown', resumeOnce);
+      document.removeEventListener('visibilitychange', resumeOnce);
+    }
+    document.addEventListener('pointerdown', resumeOnce, { once: true });
+    document.addEventListener('keydown', resumeOnce, { once: true });
+    document.addEventListener('visibilitychange', resumeOnce, { once: true });
+  })();
+  </script>
+
+</body>
+</html>
 
 </body>
 
