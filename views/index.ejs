@@ -203,72 +203,68 @@
     <span id="spanVersion"></span>
   </div>
 
-  <!-- Force autoplay and resume on interaction -->
-  <!-- Background music: shuffle + autoplay with user-gesture fallback -->
-  <script>
-  (function () {
-    // Paths are from the site root. Because Netlify publishes "dist", files in dist/music/... are available at /music/...
-    const TRACKS = [
-      "/music/default/Catch the Sun.mp3",
-      "/music/default/Rolling Clouds.mp3",
-      "/music/default/Strong Breeze.mp3",
-      "/music/default/Crisp day.mp3"
-    ];
+<!-- Force autoplay and resume on interaction -->
+<!-- Background music: shuffle + autoplay with user-gesture fallback -->
+<script>
+(function () {
+  const TRACKS = [
+    "dist/music/default/Catch the Sun.mp3",
+    "dist/music/default/Rolling Clouds.mp3",
+    "dist/music/default/Strong Breeze.mp3",
+    "dist/music/default/Crisp day.mp3"
+  ];
 
-    // Fisher–Yates shuffle
-    function shuffle(arr) {
-      const a = arr.slice();
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
+  // Fisher–Yates shuffle
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
+    return a;
+  }
 
-    let order = shuffle(TRACKS);
-    let idx = 0;
+  let order = shuffle(TRACKS);
+  let idx = 0;
 
-    const audio = new Audio();
-    audio.autoplay = true;
-    audio.loop = false; // we rotate tracks ourselves
-    audio.muted = false;
-    audio.volume = 0.6;
+  const audio = new Audio();
+  audio.autoplay = true;
+  audio.loop = false;  // we rotate ourselves
+  audio.muted = false;
+  audio.volume = 0.6;
 
-    function playCurrent() {
-      audio.src = encodeURI(order[idx]); // handles spaces in filenames
-      audio.play().catch(() => {});
-      // Optional: show current track in the "Headend Information" section
-      const el = document.getElementById("musicTrack");
-      if (el) el.textContent = decodeURI(order[idx]).replace(/^\/music\/default\//, "");
+  function playCurrent() {
+    audio.src = encodeURI(order[idx]); // handles spaces
+    audio.play().catch(() => {});
+  }
+
+  audio.addEventListener("ended", () => {
+    idx++;
+    if (idx >= order.length) {
+      order = shuffle(TRACKS);
+      idx = 0;
     }
+    playCurrent();
+  });
 
-    audio.addEventListener("ended", () => {
-      idx++;
-      if (idx >= order.length) {
-        order = shuffle(TRACKS);
-        idx = 0;
-      }
-      playCurrent();
-    });
+  window.addEventListener("load", () => {
+    playCurrent();
+    setTimeout(playCurrent, 800);
+  });
 
-    // Try to start on load; retry shortly after in case other scripts finish late
-    window.addEventListener("load", () => {
-      playCurrent();
-      setTimeout(playCurrent, 800);
-    });
+  function resumeOnce() { playCurrent(); cleanup(); }
+  function cleanup() {
+    document.removeEventListener("pointerdown", resumeOnce);
+    document.removeEventListener("keydown", resumeOnce);
+    document.removeEventListener("visibilitychange", resumeOnce);
+  }
 
-    // Autoplay fallback: first user gesture starts/resumes
-    function resumeOnce() { playCurrent(); cleanup(); }
-    function cleanup() {
-      document.removeEventListener("pointerdown", resumeOnce);
-      document.removeEventListener("keydown", resumeOnce);
-      document.removeEventListener("visibilitychange", resumeOnce);
-    }
-    document.addEventListener("pointerdown", resumeOnce, { once: true });
-    document.addEventListener("keydown", resumeOnce, { once: true });
-    document.addEventListener("visibilitychange", resumeOnce, { once: true });
-  })();
-  </script>
+  document.addEventListener("pointerdown", resumeOnce, { once: true });
+  document.addEventListener("keydown", resumeOnce, { once: true });
+  document.addEventListener("visibilitychange", resumeOnce, { once: true });
+})();
+</script>
+
 </body>
 </html>
 
