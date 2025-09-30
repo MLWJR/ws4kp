@@ -10,7 +10,7 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"build:css": "sass --style=compressed ./server/styles/scss/main.scss ./server/styles/main.css",
 		"build": "gulp buildDist",
-		"postbuild": "mkdir -p dist/music && cp -R server/music/* dist/music/"
+		"postbuild": "mkdir -p dist/music && cp -R server/music/* dist/music/",
 		"lint": "eslint ./server/scripts/**/*.mjs ./proxy/**/*.mjs ./src/**/*.mjs *.mjs",
 		"lint:fix": "eslint --fix ./server/scripts/**/*.mjs ./proxy/**/*.mjs ./src/**/*.mjs *.mjs",
 		"lintall": "eslint ./server/scripts/**/*.mjs ./proxy/**/*.mjs ./src/**/*.mjs *.mjs ./datagenerators/**/*.mjs ./gulp/**/*.mjs ./tests/**/*.mjs",
