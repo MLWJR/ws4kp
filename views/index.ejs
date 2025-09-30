@@ -205,16 +205,18 @@
 
 <!-- Force autoplay and resume on interaction -->
 <!-- Background music: shuffle + autoplay with user-gesture fallback -->
+
 <script>
 (function () {
+  // 1) Your tracks
   const TRACKS = [
-    "dist/music/default/Catch the Sun.mp3",
-    "dist/music/default/Rolling Clouds.mp3",
-    "dist/music/default/Strong Breeze.mp3",
-    "dist/music/default/Crisp day.mp3"
+    "/music/default/Catch the Sun.mp3",
+    "/music/default/Rolling Clouds.mp3",
+    "/music/default/Strong Breeze.mp3",
+    "/music/default/Crisp day.mp3"
   ];
 
-  // Fisher–Yates shuffle
+  // 2) Shuffle
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -227,43 +229,70 @@
   let order = shuffle(TRACKS);
   let idx = 0;
 
-  const audio = new Audio();
+  // 3) Create an <audio> element and add to DOM (helps some kiosk policies)
+  const audio = document.createElement('audio');
+  audio.setAttribute('playsinline','');
   audio.autoplay = true;
-  audio.loop = false;  // we rotate ourselves
+  audio.loop = false;     // we rotate tracks ourselves
   audio.muted = false;
   audio.volume = 0.6;
+  audio.style.display = 'none';
+  document.body.appendChild(audio);
 
   function playCurrent() {
-    audio.src = encodeURI(order[idx]); // handles spaces
+    audio.src = encodeURI(order[idx]);       // handles spaces
     audio.play().catch(() => {});
   }
 
-  audio.addEventListener("ended", () => {
+  // 4) Next track on end (reshuffle when finished)
+  audio.addEventListener('ended', () => {
     idx++;
-    if (idx >= order.length) {
-      order = shuffle(TRACKS);
-      idx = 0;
-    }
+    if (idx >= order.length) { order = shuffle(TRACKS); idx = 0; }
     playCurrent();
   });
 
-  window.addEventListener("load", () => {
-    playCurrent();
-    setTimeout(playCurrent, 800);
-  });
-
-  function resumeOnce() { playCurrent(); cleanup(); }
-  function cleanup() {
-    document.removeEventListener("pointerdown", resumeOnce);
-    document.removeEventListener("keydown", resumeOnce);
-    document.removeEventListener("visibilitychange", resumeOnce);
+  // 5) Try to unmute any Howler sounds the app might use (harmless if not present)
+  function unmuteHowler() {
+    try {
+      if (window.Howler && typeof Howler.mute === 'function') Howler.mute(false);
+      if (window.Howler && Array.isArray(Howler._howls) && Howler._howls[0]) {
+        try { Howler._howls[0].play(); } catch(e){}
+      }
+    } catch(e){}
   }
 
-  document.addEventListener("pointerdown", resumeOnce, { once: true });
-  document.addEventListener("keydown", resumeOnce, { once: true });
-  document.addEventListener("visibilitychange", resumeOnce, { once: true });
+  // 6) Kickoff attempts on load (and a short retry)
+  window.addEventListener('load', () => {
+    unmuteHowler();
+    playCurrent();
+    setTimeout(() => { unmuteHowler(); playCurrent(); }, 800);
+  });
+
+  // 7) User-gesture fallback (Dakboard/fully often needs this once)
+  function resumeOnce() { unmuteHowler(); playCurrent(); cleanup(); }
+  function cleanup() {
+    document.removeEventListener('pointerdown', resumeOnce);
+    document.removeEventListener('keydown', resumeOnce);
+    document.removeEventListener('visibilitychange', resumeOnce);
+  }
+  document.addEventListener('pointerdown', resumeOnce, { once:true });
+  document.addEventListener('keydown', resumeOnce, { once:true });
+  document.addEventListener('visibilitychange', resumeOnce, { once:true });
+
+  // 8) Stop when slide hidden; resume when visible (prevents overlap with other slides)
+  function stopAudio() {
+    audio.pause();
+    try { audio.currentTime = 0; } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') stopAudio();
+    else playCurrent();
+  });
+  window.addEventListener('pagehide', stopAudio);
+  window.addEventListener('beforeunload', stopAudio);
 })();
 </script>
+
 
 </body>
 </html>
